@@ -1,0 +1,143 @@
+<html>
+    <head>
+        <title>MyBook Test</title>
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+
+        <script type="text/javascript">
+            obtainBooks = (page) => {
+                fetch(
+                    '/books' + (page ? `?page=${page}` : ''),
+                    {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': Cookies.get('csrftoken'),
+                        },
+                    }
+                )
+                .then(handleErrors)
+                .then(r => r.json())
+                .then(res => renderBooks(res.books, res.meta))
+                .then(() => {
+                    document.getElementById('books').style.display = 'flex';
+                    document.getElementById('auth').style.display = 'none';
+                })
+            };
+
+            renderBooks = (books, meta) => {
+                const booksBlock = document.getElementById('books');
+                books.map((book) => {
+                    const bookDiv = document.createElement("div");
+                    bookDiv.style.cssText = "width: 200px; box-shadow: 0 4px 6px 0 rgba(37, 38, 40, 0.2); border-radius: 8px; margin-right: 20px; margin-bottom: 30px; background-color: #fff; padding: 10px; flex-grow: 0; flex-shrink: 0;"
+
+                    const bookNameNode = document.createElement("h3");
+                    bookNameNode.innerText = book.book.name;
+
+                    const bookAuthorNode = document.createElement("p");
+                    bookAuthorNode.innerText = book.book.authors_names;
+
+                    const bookImgNode = document.createElement("img");
+                    bookImgNode.src = 'https://i3.mybook.io/c/124x196/' + book.book.default_cover
+
+
+                    bookDiv.appendChild(bookNameNode);
+                    bookDiv.appendChild(bookAuthorNode);
+                    bookDiv.appendChild(bookImgNode);
+
+                    booksBlock.appendChild(bookDiv);
+                });
+
+                if (meta.previous) {
+                    const nextBooksDiv = document.createElement("div");
+                    nextBooksDiv.style.cssText = "display: flex; align-items: center; justify-content: center; width: 200px; height: 200px; font-size: 32px; box-shadow: 0 4px 6px 0 rgba(37, 38, 40, 0.2); border-radius: 8px; margin-right: 20px; margin-bottom: 30px; background-color: #fff; padding: 10px; flex-grow: 0; flex-shrink: 0;"
+                    nextBooksDiv.innerText = 'Prev';
+                    nextBooksDiv.onclick = () => {
+                        booksBlock.innerHTML = '';
+                        obtainBooks(meta.previous);
+                    };
+                    booksBlock.appendChild(nextBooksDiv)
+                }
+
+                if (meta.next) {
+                    const nextBooksDiv = document.createElement("div");
+                    nextBooksDiv.style.cssText = "display: flex; align-items: center; justify-content: center; width: 200px; height: 200px; font-size: 32px; box-shadow: 0 4px 6px 0 rgba(37, 38, 40, 0.2); border-radius: 8px; margin-right: 20px; margin-bottom: 30px; background-color: #fff; padding: 10px; flex-grow: 0; flex-shrink: 0;"
+                    nextBooksDiv.innerText = 'Next';
+                    nextBooksDiv.onclick = () => {
+                        booksBlock.innerHTML = '';
+                        obtainBooks(meta.next);
+                    };
+                    booksBlock.appendChild(nextBooksDiv)
+                }
+            };
+
+            function handleErrors(response) {
+                if (!response.ok) throw Error(response.status);
+                return response;
+            }
+
+
+            const auth = () => {
+                const email = document.getElementById('emailField').value;
+                const password = document.getElementById('passwordField').value;
+
+                fetch(
+                    '/auth',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': Cookies.get('csrftoken'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email,
+                            password,
+                        }),
+                    }
+                )
+                .then(handleErrors)
+                .then(() => fetch(
+                    '/books',
+                    {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': Cookies.get('csrftoken'),
+                        },
+                    }
+                ))
+                .then(handleErrors)
+                .then(r => r.json())
+                .then(res => renderBooks(res.books, res.meta))
+                .then(() => {
+                    document.getElementById('books').style.display = 'flex';
+                    document.getElementById('auth').style.display = 'none';
+                })
+
+
+            };
+        </script>
+
+    </head>
+    <body  onload="script();" style='font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif; background-color: #eee; padding: 30px;'>
+
+        <div id="auth" style="display: none">
+            <input id="emailField" placeholder="email" type="email">
+            <input id="passwordField" placeholder="password" type="password">
+            <button onclick="auth()">Auth</button>
+        </div>
+
+        <div id="books" style="display: flex; flex-wrap: wrap;">
+        </div>
+
+
+        <script type="text/javascript">
+            const session = Cookies.get('session');
+
+            if (!session) {
+                document.getElementById('books').style.display = 'none';
+                document.getElementById('auth').style.display = 'block';
+            } else {
+                obtainBooks();
+            }
+        </script>
+    </body>
+</html>
