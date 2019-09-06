@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 
 import requests
 
-BASE_DOMAIN = 'https://mybook.ru/api/'
+BASE_DOMAIN = 'https://mybook.ru/'
 BASE_API_DOMAIN = 'https://mybook.ru/api/'
 
 
